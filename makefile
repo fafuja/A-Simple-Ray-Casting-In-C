@@ -8,4 +8,4 @@ test: test.o
 .PHONY: clean #‘make clean’ will run the recipe regardless of whether there is a file named clean.
 
 clean: 
-	rm *.o test
+	rm *.o
