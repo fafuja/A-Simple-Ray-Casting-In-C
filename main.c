@@ -9,8 +9,8 @@
 const int wWidth = 800;
 const int wHeight = 700;
 
-double mouseX;
-double mouseY;
+double mouseX_NDC;
+double mouseY_NDC;
 
 static void sceneRender();
 static void processInput(GLFWwindow* window);
@@ -57,9 +57,9 @@ int main(void)
 }
 static void processMousePosition(GLFWwindow* window, double xpos, double ypos)
 {
-	mouseX = xpos;
-	mouseY = ypos;
-	//printf("%f %f \n", xpos, ypos);
+	mouseX_NDC = ((2*xpos)/wWidth - 1);
+	mouseY_NDC = ((2*ypos)/wHeight - 1);
+	printf("%f %f \n", mouseX_NDC, mouseY_NDC);
 }
 static void processInput(GLFWwindow* window)
 {
