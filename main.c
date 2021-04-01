@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <string.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "shaders.h"
@@ -9,8 +8,8 @@
 const int wWidth = 800;
 const int wHeight = 700;
 
-double mouseX_NDC;
-double mouseY_NDC;
+float mouseX_NDC = 0.5f;
+float mouseY_NDC = 0.5f;
 
 static void sceneRender();
 static void processInput(GLFWwindow* window);
@@ -25,6 +24,9 @@ int main(void)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glfwWindowHint(GLFW_RESIZABLE, false);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true);
+#endif
 	window = glfwCreateWindow(wWidth, wHeight, "Simple Ray Casting in C", NULL, NULL);
 	
 	if(!window)
@@ -44,30 +46,7 @@ int main(void)
 
 	glViewport(0,0,wWidth, wHeight);
 	
-	while(!glfwWindowShouldClose(window))
-	{
-		glfwSetCursorPosCallback(window, processMousePosition);
-		processInput(window);
-		sceneRender();
-		glfwPollEvents();
-		glfwSwapBuffers(window);
-	}
-	glfwTerminate();
-	return 0;
-}
-static void processMousePosition(GLFWwindow* window, double xpos, double ypos)
-{
-	mouseX_NDC = ((2*xpos)/wWidth - 1);
-	mouseY_NDC = ((2*ypos)/wHeight - 1);
-	printf("%f %f \n", mouseX_NDC, mouseY_NDC);
-}
-static void processInput(GLFWwindow* window)
-{
-
-}
-
-static void createObject()
-{
+	//----
 	unsigned int VAO, VBO, vertexShader, fragmentShader, shaderProgram;
 	int success;
 	char infoLog[512];
@@ -84,7 +63,6 @@ static void createObject()
 		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
 		printf("%s \n",infoLog);
 	}
-	memset(infoLog, 0, sizeof(infoLog));
 
 	// Compiling Fragment Shader
 	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -98,7 +76,6 @@ static void createObject()
 		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
 		printf("%s \n",infoLog);
 	}
-	memset(infoLog, 0, sizeof(infoLog));
 
 	shaderProgram = glCreateProgram();
 	glAttachShader(shaderProgram, vertexShader);
@@ -118,29 +95,59 @@ static void createObject()
 
 	// Setting vertices 
 	float vertices[] = {
-        	0.0f, 0.0f, 0.0f,  // left 
-        	0.5f, 0.5f, 0.0f,  // right
-        	0.0f, 0.0f, 0.0f,  // top 
+        	0.0f, 0.0f, 0.0f, 
+        	mouseX_NDC, mouseY_NDC, 0.0f,
+        	0.0f, 0.0f, 0.0f 
 	};
 	
 	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
 	glGenBuffers(1, &VBO);
+	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), (void*)0);	
-	
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), (void*)0);		
 	// Enabling the attribute we just set up.
 	glEnableVertexAttribArray(0);
-	
-	glUseProgram(shaderProgram);
-	//glBindVertexArray(VAO);
-	glDrawArrays(GL_LINE_STRIP, 0, 2);
+	//----
+
+	while(!glfwWindowShouldClose(window))
+	{
+		vertices[3] = mouseX_NDC;
+		vertices[4] = mouseY_NDC;
+
+		glfwSetCursorPosCallback(window, processMousePosition);
+		processInput(window);
+
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);	
+		sceneRender(shaderProgram, VAO);
+
+		glfwPollEvents();
+		glfwSwapBuffers(window);
+	}
+
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteProgram(shaderProgram);
+	glfwTerminate();
+	return 0;
 }
-static void sceneRender()
+static void processMousePosition(GLFWwindow* window, double xpos, double ypos)
 {
-	glClearColor(0.2f, 0.1f, 0.5f, 1.0f);
+	mouseX_NDC = (float) ((2*xpos)/wWidth - 1);
+	mouseY_NDC = (float) -((2*ypos)/wHeight - 1);
+	//printf("%f %f \n", mouseX_NDC, mouseY_NDC);
+}
+static void processInput(GLFWwindow* window)
+{
+
+}
+static void sceneRender(unsigned int shaderProgram, unsigned int VAO)
+{
+	glClearColor(0.2f, 0.1f, 0.5f, 1.0fi);
 	glClear(GL_COLOR_BUFFER_BIT);
-	createObject();
+
+	glUseProgram(shaderProgram);
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_LINE_STRIP, 0, 2);
 }
 
