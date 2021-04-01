@@ -12,9 +12,12 @@ const int wHeight = 700;
 float mouseX_NDC = 0.5f;
 float mouseY_NDC = 0.5f;
 
-static void sceneRender();
-static void processInput(GLFWwindow* window);
-static void processMousePosition(GLFWwindow* window, double xpos, double ypos);
+float mousePosition[2];
+
+bool CheckCollision(float* mouseP, Object two);
+static void SceneRender();
+static void ProcessInput(GLFWwindow* window);
+static void ProcessMousePosition(GLFWwindow* window, double xpos, double ypos);
 
 int main(void)
 {
@@ -147,11 +150,15 @@ int main(void)
 		r_vertices[3] = mouseX_NDC;
 		r_vertices[4] = mouseY_NDC;
 
-		glfwSetCursorPosCallback(window, processMousePosition);
-		processInput(window);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(r_vertices), r_vertices);	
-		sceneRender(shaderProgram, VAO);
+		glfwSetCursorPosCallback(window, ProcessMousePosition);
+		bool ok = CheckCollision(mousePosition, o1);
+		if(ok){
+			// do something
 
+		}
+		ProcessInput(window);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(r_vertices), r_vertices);	
+		SceneRender(shaderProgram, VAO);	
 		glfwPollEvents();
 		glfwSwapBuffers(window);
 	}
@@ -162,16 +169,18 @@ int main(void)
 	glfwTerminate();
 	return 0;
 }
-static void processMousePosition(GLFWwindow* window, double xpos, double ypos)
+static void ProcessMousePosition(GLFWwindow* window, double xpos, double ypos)
 {
 	mouseX_NDC = (float) ((2*xpos)/wWidth - 1);
 	mouseY_NDC = (float) -((2*ypos)/wHeight - 1);
+	mousePosition[0] = (float) xpos;
+	mousePosition[1] = (float) (mouseY_NDC + 1) * wHeight / 2;
 }
-static void processInput(GLFWwindow* window)
+static void ProcessInput(GLFWwindow* window)
 {
 
 }
-static void sceneRender(unsigned int shaderProgram, unsigned int *VAO)
+static void SceneRender(unsigned int shaderProgram, unsigned int *VAO)
 {
 	glClearColor(0.2f, 0.1f, 0.5f, 1.0fi);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -182,14 +191,26 @@ static void sceneRender(unsigned int shaderProgram, unsigned int *VAO)
 	glBindVertexArray(VAO[1]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
-
-bool CheckCollision(Object one, Object two) 
+bool CheckCollision(float* mouseP, Object two) 
 {
-    bool collisionX = one.position.x + one.size.x >= two.position.x &&
-        two.position.x + two.size.x >= one.position.x;
-    // collision y-axis?
-    bool collisionY = one.position.y + one.size.y >= two.position.y &&
-        two.position.y + two.size.y >= one.position.y;
-    // collision only if on both axes
-    return collisionX && collisionY;
+        bool collisionX; 
+       	if(mouseP[0] >= two.position.x && two.position.x + two.size.x >= mouseP[0])
+        {
+        	collisionX = True;
+	}
+    	
+        bool collisionY;
+       	if(mouseP[1] >= two.position.y && two.position.y + two.size.y >= mouseP[1])
+        {
+        	collisionY = True;
+        }
+    	
+        if(collisionX && collisionY)
+        {
+        	return True;
+        }
+        else
+        {
+        	return False;
+        }
 }
