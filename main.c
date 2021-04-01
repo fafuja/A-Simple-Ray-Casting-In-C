@@ -2,8 +2,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "shaders.h"
-#define true 1
-#define false 0
+#include "object.h"
+
+typedef enum { False = 0, True = 1 } bool;
 
 const int wWidth = 800;
 const int wHeight = 700;
@@ -22,10 +23,10 @@ int main(void)
 		return -1;	
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-	glfwWindowHint(GLFW_RESIZABLE, false);
+	glfwWindowHint(GLFW_RESIZABLE, False);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, True);
 #endif
 	window = glfwCreateWindow(wWidth, wHeight, "Simple Ray Casting in C", NULL, NULL);
 	
@@ -107,6 +108,8 @@ int main(void)
 		0.4f, 0.5f, 0.0f
 	};
 
+	Object o1 = {.position.x = wWidth*1.3f/2, .position.y = wHeight*1.3f/2, .size.x = wWidth*1.4f/2 - wWidth*1.3f/2, .size.y =  wHeight*1.5f/2 - wHeight*1.3f/2 };
+
 	unsigned int s_indices[] = {
 		3, 2, 1,
 		2, 0, 1
@@ -120,7 +123,7 @@ int main(void)
 	glBindVertexArray(VAO[0]);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(r_vertices), r_vertices, GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), (void*)0);		
+	glVertexAttribPointer(0, 3, GL_FLOAT, False, 3 * sizeof(float), (void*)0);		
 	// Enabling the attribute we just set up.
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
@@ -131,7 +134,7 @@ int main(void)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(s_vertices), s_vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(s_indices), s_indices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, False, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
 
@@ -178,4 +181,15 @@ static void sceneRender(unsigned int shaderProgram, unsigned int *VAO)
 	glDrawArrays(GL_LINE_STRIP, 0, 2);
 	glBindVertexArray(VAO[1]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+bool CheckCollision(Object one, Object two) 
+{
+    bool collisionX = one.position.x + one.size.x >= two.position.x &&
+        two.position.x + two.size.x >= one.position.x;
+    // collision y-axis?
+    bool collisionY = one.position.y + one.size.y >= two.position.y &&
+        two.position.y + two.size.y >= one.position.y;
+    // collision only if on both axes
+    return collisionX && collisionY;
 }
