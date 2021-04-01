@@ -47,7 +47,7 @@ int main(void)
 	glViewport(0,0,wWidth, wHeight);
 	
 	//----
-	unsigned int VAO, VBO, vertexShader, fragmentShader, shaderProgram;
+	unsigned int VAO[2], VBO[2], EBO, vertexShader, fragmentShader, shaderProgram;
 	int success;
 	char infoLog[512];
 	// Defining shaders and linking them
@@ -93,40 +93,68 @@ int main(void)
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	// Setting vertices 
-	float vertices[] = {
+	// Assigning ray and square vertices
+	float r_vertices[] = {
         	0.0f, 0.0f, 0.0f, 
         	mouseX_NDC, mouseY_NDC, 0.0f,
         	0.0f, 0.0f, 0.0f 
 	};
 	
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+	float s_vertices[] = {
+		0.3f, 0.3f, 0.0f,
+	       	0.3f, 0.5f, 0.0f,
+		0.4f, 0.3f, 0.0f,
+		0.4f, 0.5f, 0.0f
+	};
+
+	unsigned int s_indices[] = {
+		3, 2, 1,
+		2, 0, 1
+	};
+
+	glGenVertexArrays(2, VAO);
+	glGenBuffers(2, VBO);
+	glGenBuffers(1, &EBO);
+
+	// Ray (VAO[0])
+	glBindVertexArray(VAO[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(r_vertices), r_vertices, GL_DYNAMIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), (void*)0);		
 	// Enabling the attribute we just set up.
 	glEnableVertexAttribArray(0);
-	//----
+	glBindVertexArray(0);
 
+	// Square (VAO[1])
+	glBindVertexArray(VAO[1]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(s_vertices), s_vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(s_indices), s_indices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);
+
+	//----
+	
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);	
+	
 	while(!glfwWindowShouldClose(window))
 	{
-		vertices[3] = mouseX_NDC;
-		vertices[4] = mouseY_NDC;
+		r_vertices[3] = mouseX_NDC;
+		r_vertices[4] = mouseY_NDC;
 
 		glfwSetCursorPosCallback(window, processMousePosition);
 		processInput(window);
-
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);	
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(r_vertices), r_vertices);	
 		sceneRender(shaderProgram, VAO);
 
 		glfwPollEvents();
 		glfwSwapBuffers(window);
 	}
 
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(1, VAO);
+	glDeleteBuffers(1, VBO);
 	glDeleteProgram(shaderProgram);
 	glfwTerminate();
 	return 0;
@@ -135,19 +163,19 @@ static void processMousePosition(GLFWwindow* window, double xpos, double ypos)
 {
 	mouseX_NDC = (float) ((2*xpos)/wWidth - 1);
 	mouseY_NDC = (float) -((2*ypos)/wHeight - 1);
-	//printf("%f %f \n", mouseX_NDC, mouseY_NDC);
 }
 static void processInput(GLFWwindow* window)
 {
 
 }
-static void sceneRender(unsigned int shaderProgram, unsigned int VAO)
+static void sceneRender(unsigned int shaderProgram, unsigned int *VAO)
 {
 	glClearColor(0.2f, 0.1f, 0.5f, 1.0fi);
 	glClear(GL_COLOR_BUFFER_BIT);
-
 	glUseProgram(shaderProgram);
-	glBindVertexArray(VAO);
+	
+	glBindVertexArray(VAO[0]);
 	glDrawArrays(GL_LINE_STRIP, 0, 2);
+	glBindVertexArray(VAO[1]);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
-
