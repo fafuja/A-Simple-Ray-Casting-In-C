@@ -9,8 +9,8 @@ typedef enum { False = 0, True = 1 } bool;
 const int wWidth = 800;
 const int wHeight = 700;
 
-float mouseX_NDC = 0.5f;
-float mouseY_NDC = 0.5f;
+float mouseX_NDC = 0.1f;
+float mouseY_NDC = 0.1f;
 
 float mousePosition[2];
 
@@ -148,19 +148,25 @@ int main(void)
 	while(!glfwWindowShouldClose(window))
 	{
 		r_vertices[3] = mouseX_NDC;
+		
 		r_vertices[4] = mouseY_NDC;
 
 		glfwSetCursorPosCallback(window, ProcessMousePosition);
-		bool ok = CheckCollision(mousePosition, o1);
-		if(ok){
-			// do something
-
+		for(float i = 0.0f; i <= mousePosition[0]; i++){
+			for(int j = 0.0f; j <= mousePosition[1]; j++){
+				float rayP[] = {i, j};
+				bool ok = CheckCollision(rayP, o1);
+				if(ok){
+					printf("ok \n");
+				}
+			}
 		}
-		ProcessInput(window);
+
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(r_vertices), r_vertices);	
 		SceneRender(shaderProgram, VAO);	
 		glfwPollEvents();
 		glfwSwapBuffers(window);
+		printf("-- \n");
 	}
 
 	glDeleteVertexArrays(1, VAO);
