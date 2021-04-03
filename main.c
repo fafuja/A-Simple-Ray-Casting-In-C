@@ -1,10 +1,11 @@
 #include <stdio.h>
+#include <math.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "shaders.h"
+#include "types.h"
+#include "ray.h"
 #include "object.h"
-
-typedef enum { False = 0, True = 1 } bool;
 
 const int wWidth = 800;
 const int wHeight = 700;
@@ -14,7 +15,6 @@ float mouseY_NDC = 0.1f;
 
 float mousePosition[2];
 
-bool CheckCollision(float* mouseP, Object two);
 static void SceneRender();
 static void ProcessInput(GLFWwindow* window);
 static void ProcessMousePosition(GLFWwindow* window, double xpos, double ypos);
@@ -147,26 +147,25 @@ int main(void)
 	
 	while(!glfwWindowShouldClose(window))
 	{
-		r_vertices[3] = mouseX_NDC;
-		
-		r_vertices[4] = mouseY_NDC;
-
-		glfwSetCursorPosCallback(window, ProcessMousePosition);
-		for(float i = 0.0f; i <= mousePosition[0]; i++){
-			for(int j = 0.0f; j <= mousePosition[1]; j++){
-				float rayP[] = {i, j};
-				bool ok = CheckCollision(rayP, o1);
-				if(ok){
-					printf("ok \n");
-				}
-			}
+				
+		Ray r1;
+		r1.position.x = (float) (r_vertices[0] + 1) * wWidth / 2;
+		r1.position.y = (float) (r_vertices[1] + 1) * wHeight / 2;
+		r1.direction.x = (mousePosition[0] - r1.position.x) / sqrt(pow(mousePosition[0] - r1.position.x, 2) + pow(mousePosition[1] - r1.position.y, 2));
+		r1.direction.y = (mousePosition[1] - r1.position.y) / sqrt(pow(mousePosition[0] - r1.position.x, 2) + pow(mousePosition[1] - r1.position.y, 2));
+		printf("%f %f \n", mousePosition[0], mousePosition[1]);
+		r_vertices[3] = (((r1.direction.x*200 + r1.position.x) * 2) / wWidth - 1);
+		r_vertices[4] = (((r1.direction.y*200 + r1.position.y) * 2) / wHeight - 1);
+		if(CheckCollision(&r1, &o1))
+		{
+			printf("gay \n");
 		}
-
+		
+		glfwSetCursorPosCallback(window, ProcessMousePosition);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(r_vertices), r_vertices);	
 		SceneRender(shaderProgram, VAO);	
 		glfwPollEvents();
 		glfwSwapBuffers(window);
-		printf("-- \n");
 	}
 
 	glDeleteVertexArrays(1, VAO);
@@ -196,27 +195,4 @@ static void SceneRender(unsigned int shaderProgram, unsigned int *VAO)
 	glDrawArrays(GL_LINE_STRIP, 0, 2);
 	glBindVertexArray(VAO[1]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-}
-bool CheckCollision(float* mouseP, Object two) 
-{
-        bool collisionX; 
-       	if(mouseP[0] >= two.position.x && two.position.x + two.size.x >= mouseP[0])
-        {
-        	collisionX = True;
-	}
-    	
-        bool collisionY;
-       	if(mouseP[1] >= two.position.y && two.position.y + two.size.y >= mouseP[1])
-        {
-        	collisionY = True;
-        }
-    	
-        if(collisionX && collisionY)
-        {
-        	return True;
-        }
-        else
-        {
-        	return False;
-        }
 }
