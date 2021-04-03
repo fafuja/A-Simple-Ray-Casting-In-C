@@ -1,3 +1,1 @@
-
-bool CheckCollision(Ray* r, Object* o);
-
+Vec2 CheckCollision(Ray* r, Rect* o);

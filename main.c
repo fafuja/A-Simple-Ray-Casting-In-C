@@ -5,7 +5,7 @@
 #include "shaders.h"
 #include "types.h"
 #include "ray.h"
-#include "object.h"
+#include "rect.h"
 
 const int wWidth = 800;
 const int wHeight = 700;
@@ -100,18 +100,27 @@ int main(void)
 	// Assigning ray and square vertices
 	float r_vertices[] = {
         	0.0f, 0.0f, 0.0f, 
-        	mouseX_NDC, mouseY_NDC, 0.0f,
+        	0.0f, 0.0f, 0.0f,
         	0.0f, 0.0f, 0.0f 
 	};
 	
 	float s_vertices[] = {
-		0.3f, 0.3f, 0.0f,
-	       	0.3f, 0.5f, 0.0f,
-		0.4f, 0.3f, 0.0f,
-		0.4f, 0.5f, 0.0f
+		0.3f, 0.3f, 0.0f, // bottom left
+	       	0.3f, 0.5f, 0.0f, // top left
+		0.4f, 0.3f, 0.0f, // bottom right
+		0.4f, 0.5f, 0.0f // top right
 	};
 
-	Object o1 = {.position.x = wWidth*1.3f/2, .position.y = wHeight*1.3f/2, .size.x = wWidth*1.4f/2 - wWidth*1.3f/2, .size.y =  wHeight*1.5f/2 - wHeight*1.3f/2 };
+	Rect re1 = {.position.x = wWidth*1.3f/2, .position.y = wHeight*1.3f/2, .size.x = wWidth*1.4f/2 - wWidth*1.3f/2, .size.y =  wHeight*1.5f/2 - wHeight*1.3f/2 };
+	
+	re1.vertices[0].x = wWidth*(1.0f + s_vertices[0])/2;
+	re1.vertices[0].y = wHeight * (1.0f + s_vertices[1])/2;
+	re1.vertices[1].x = wWidth*(1.0f + s_vertices[3])/2;
+	re1.vertices[1].y = wHeight * (1.0f + s_vertices[4])/2;
+	re1.vertices[2].x = wWidth*(1.0f + s_vertices[6])/2;
+	re1.vertices[2].y = wHeight * (1.0f + s_vertices[7])/2;
+	re1.vertices[3].x = wWidth*(1.0f + s_vertices[9])/2;
+	re1.vertices[3].y = wHeight * (1.0f + s_vertices[10])/2;
 
 	unsigned int s_indices[] = {
 		3, 2, 1,
@@ -153,12 +162,14 @@ int main(void)
 		r1.position.y = (float) (r_vertices[1] + 1) * wHeight / 2;
 		r1.direction.x = (mousePosition[0] - r1.position.x) / sqrt(pow(mousePosition[0] - r1.position.x, 2) + pow(mousePosition[1] - r1.position.y, 2));
 		r1.direction.y = (mousePosition[1] - r1.position.y) / sqrt(pow(mousePosition[0] - r1.position.x, 2) + pow(mousePosition[1] - r1.position.y, 2));
-		printf("%f %f \n", mousePosition[0], mousePosition[1]);
-		r_vertices[3] = (((r1.direction.x*200 + r1.position.x) * 2) / wWidth - 1);
-		r_vertices[4] = (((r1.direction.y*200 + r1.position.y) * 2) / wHeight - 1);
-		if(CheckCollision(&r1, &o1))
+		
+		r_vertices[3] = ((r1.direction.x*200 + r1.position.x) * 2) / wWidth - 1;
+		r_vertices[4] = ((r1.direction.y*200 + r1.position.y) * 2) / wHeight - 1;
+		Vec2 col = CheckCollision(&r1, &re1);
+		if(col.y != -1)
 		{
-			printf("gay \n");
+			r_vertices[3] = (col.x * 2) / wWidth - 1;
+			r_vertices[4] = (col.y * 2) / wHeight - 1;
 		}
 		
 		glfwSetCursorPosCallback(window, ProcessMousePosition);

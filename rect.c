@@ -1,5 +1,5 @@
 #include "types.h"
 
-bool CreateObject(){
+bool CreateRect(){
 	return False;
 }
