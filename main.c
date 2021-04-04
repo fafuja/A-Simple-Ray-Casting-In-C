@@ -5,13 +5,9 @@
 #include "shaders.h"
 #include "types.h"
 #include "ray.h"
-#include "rect.h"
 
 const int wWidth = 800;
 const int wHeight = 700;
-
-float mouseX_NDC = 0.1f;
-float mouseY_NDC = 0.1f;
 
 float mousePosition[2];
 
@@ -51,7 +47,7 @@ int main(void)
 	glViewport(0,0,wWidth, wHeight);
 	
 	//----
-	unsigned int VAO[2], VBO[2], EBO, vertexShader, fragmentShader, shaderProgram;
+	unsigned int VAO[3], VBO[3], EBO, vertexShader, fragmentShader, shaderProgram;
 	int success;
 	char infoLog[512];
 	// Defining shaders and linking them
@@ -110,6 +106,10 @@ int main(void)
 		0.4f, 0.3f, 0.0f, // bottom right
 		0.4f, 0.5f, 0.0f // top right
 	};
+	
+	float p_vertices[] = {
+		0.0f, 0.0f, 0.0f
+	};
 
 	Rect re1 = {.position.x = wWidth*1.3f/2, .position.y = wHeight*1.3f/2, .size.x = wWidth*1.4f/2 - wWidth*1.3f/2, .size.y =  wHeight*1.5f/2 - wHeight*1.3f/2 };
 	
@@ -127,9 +127,10 @@ int main(void)
 		2, 0, 1
 	};
 
-	glGenVertexArrays(2, VAO);
-	glGenBuffers(2, VBO);
+	glGenVertexArrays(3, VAO);
+	glGenBuffers(3, VBO);
 	glGenBuffers(1, &EBO);
+	
 
 	// Ray (VAO[0])
 	glBindVertexArray(VAO[0]);
@@ -149,14 +150,23 @@ int main(void)
 	glVertexAttribPointer(0, 3, GL_FLOAT, False, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
+	
+	// Point (VAO[0])
+	glBindVertexArray(VAO[2]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(p_vertices), p_vertices, GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, False, 3 * sizeof(float), (void*)0);		
+	// Enabling the attribute we just set up.
+	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);
 
 	//----
 	
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);	
 	
 	while(!glfwWindowShouldClose(window))
-	{
-				
+	{	
+		ProcessInput(window);	
 		Ray r1;
 		r1.position.x = (float) (r_vertices[0] + 1) * wWidth / 2;
 		r1.position.y = (float) (r_vertices[1] + 1) * wHeight / 2;
@@ -165,15 +175,25 @@ int main(void)
 		
 		r_vertices[3] = ((r1.direction.x*200 + r1.position.x) * 2) / wWidth - 1;
 		r_vertices[4] = ((r1.direction.y*200 + r1.position.y) * 2) / wHeight - 1;
+		p_vertices[0] = 0.0f;
+		p_vertices[1] = 0.0f;
 		Vec2 col = CheckCollision(&r1, &re1);
 		if(col.y != -1)
 		{
 			r_vertices[3] = (col.x * 2) / wWidth - 1;
 			r_vertices[4] = (col.y * 2) / wHeight - 1;
+			p_vertices[0] = (col.x * 2) / wWidth - 1;
+			p_vertices[1] = (col.y * 2) / wHeight - 1;
+			glPointSize(5.0f);
+
+		}else{
+			glPointSize(1.0f);
 		}
-		
 		glfwSetCursorPosCallback(window, ProcessMousePosition);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(r_vertices), r_vertices);	
+		glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(p_vertices), p_vertices);
 		SceneRender(shaderProgram, VAO);	
 		glfwPollEvents();
 		glfwSwapBuffers(window);
@@ -187,14 +207,15 @@ int main(void)
 }
 static void ProcessMousePosition(GLFWwindow* window, double xpos, double ypos)
 {
-	mouseX_NDC = (float) ((2*xpos)/wWidth - 1);
-	mouseY_NDC = (float) -((2*ypos)/wHeight - 1);
+	float mouseX_NDC = (float) ((2*xpos)/wWidth - 1);
+	float mouseY_NDC = (float) -((2*ypos)/wHeight - 1);
 	mousePosition[0] = (float) xpos;
 	mousePosition[1] = (float) (mouseY_NDC + 1) * wHeight / 2;
 }
 static void ProcessInput(GLFWwindow* window)
 {
-
+	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, True);
 }
 static void SceneRender(unsigned int shaderProgram, unsigned int *VAO)
 {
@@ -206,4 +227,8 @@ static void SceneRender(unsigned int shaderProgram, unsigned int *VAO)
 	glDrawArrays(GL_LINE_STRIP, 0, 2);
 	glBindVertexArray(VAO[1]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(VAO[2]);
+	glDrawArrays(GL_POINTS, 0, 1);
 }
+
+

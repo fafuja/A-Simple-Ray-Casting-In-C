@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include "types.h"
+#include "ray.h"
 
 Vec2 CheckCollision(Ray* r, Rect* re)
 {
 	Vec2 col = {.x = -1, .y = -1};
-	// ray = x1 + t(x2 - x1) | y1 + t(y2 - y1)
 	float x1 = r->position.x;
 	float y1 = r->position.y;
 	float x2 = r->position.x + (r->direction.x * 200);
